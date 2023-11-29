@@ -4,3 +4,6 @@
 [submodule "design"]
 	path = design
 	url = https://github.com/raiden-20/Messenger-design.git
+[submodule "auth-service"]
+	path = auth-service
+	url = https://github.com/raiden-20/Messenger-authService.git
