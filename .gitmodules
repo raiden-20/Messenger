@@ -10,3 +10,6 @@
 [submodule "mail-sender"]
 	path = mail-sender
 	url = https://github.com/raiden-20/Messenger-mailSender.git
+[submodule "social-service"]
+	path = social-service
+	url = https://github.com/raiden-20/Messenger-socialService.git
