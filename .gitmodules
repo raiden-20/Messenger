@@ -13,3 +13,6 @@
 [submodule "social-service"]
 	path = social-service
 	url = https://github.com/raiden-20/Messenger-socialService.git
+[submodule "file-service"]
+	path = file-service
+	url = https://github.com/raiden-20/Messenger-fileService.git
