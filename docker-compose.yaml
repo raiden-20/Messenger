@@ -1,58 +1,167 @@
 version: "3.9"
 services:
-
-  auth_service:
-    build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+  minio:
+    container_name: minio
+    image: minio/minio
     ports:
-      - ${AUTH_SERVICE_PORT}:8000
-    depends_on:
-      - auth_db
-    
-  auth_db:
-    image: postgres:14
+      - ${MINIO_GUI_PORT}:9001
+      - ${MINIO_PORT}:9000
     volumes:
-      - auth_cluster:/var/lib/postgresql/data
-      - ./init_db/auth_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+      - minio:/data
     environment:
-      - POSTGRES_USER=${AUTH_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
-      - POSTGRES_DB=${AUTH_POSTGRES_DB}
-    restart: on-failure
-    ports:
-      - 5000:5432
-    healthcheck:
-      test: "CMD-SHELL pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB}"
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - backend
+    command: server --console-address ":9001" /data
 
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:3.11.25-management
     volumes:
       - rabbitmq:/var/lib/rabbitmq
     hostname: rabbitmq
     restart: on-failure
     ports:
-      - 15672:15672
-      - 5672:5672
+      - ${RABBITMQ_ADMIN_PORT}:15672
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+    networks:
+      - backend
     healthcheck:
       test: "CMD rabbitmqctl status"
 
-  mail_sender:
+  auth-service:
+    container_name: auth-service
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - ${AUTH_SERVICE_PORT}:8080
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - AUTH_POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - AUTH_POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - AUTH_POSTGRES_URL=${AUTH_POSTGRES_URL}
+      - AUTH_LINK_ACTIVATION=${AUTH_LINK_ACTIVATION}
+      - AUTH_LINK_EMAIL=${AUTH_LINK_EMAIL}
+    networks:
+      - backend
+    depends_on:
+      - auth-db
+
+  auth-db:
+    container_name: auth-db
+    image: postgres:14
+    volumes:
+      - auth-db:/var/lib/postgresql/data
+      - ./init_db/auth_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - ${AUTH_DB_PORT}:5432
+    environment:
+      - POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${AUTH_POSTGRES_DB}
+    restart: on-failure
+    networks:
+      - backend
+    healthcheck:
+      test: "CMD-SHELL pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB}"
+
+  mail-sender:
+    container_name: mail-sender
     build:
       context: ./mail-sender
       dockerfile: Dockerfile
-    ports:
-      - ${MAIL_SENDER_PORT}:8001
+    environment:
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
+    networks:
+      - backend
     depends_on:
       - rabbitmq
-      - auth_service
+      - auth-service
 
+  social-service:
+    container_name: social-service
+    build:
+      context: ./social-service
+      dockerfile: Dockerfile
+    ports:
+      - ${SOCIAL_SERVICE_PORT}:8080
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - SOCIAL_POSTGRES_PASSWORD=${SOCIAL_POSTGRES_PASSWORD}
+      - SOCIAL_POSTGRES_USER=${SOCIAL_POSTGRES_USER}
+      - SOCIAL_POSTGRES_URL=${SOCIAL_POSTGRES_URL}
+    networks:
+      - backend
+    depends_on:
+      - social-db
+      - rabbitmq
+
+  social-db:
+    container_name: social-db
+    image: postgres:14
+    volumes:
+      - social-db:/var/lib/postgresql/data
+      - ./init_db/social_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - ${SOCIAL_DB_PORT}:5432
+    environment:
+      - POSTGRES_USER=${SOCIAL_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${SOCIAL_POSTGRES_PASSWORD}
+      - POSTGRES_DB=${SOCIAL_POSTGRES_DB}
+    restart: on-failure
+    networks:
+      - backend
+    healthcheck:
+      test: "CMD-SHELL pg_isready -U ${SOCIAL_POSTGRES_USER} -d ${SOCIAL_POSTGRES_DB}"
+
+  file-service:
+    container_name: file-service
+    build:
+      context: ./file-service
+      dockerfile: Dockerfile
+    ports:
+      - ${FILE_SERVICE_PORT}:8080
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_HOST=${MINIO_HOST}
+    networks:
+      - backend
+    depends_on:
+      - rabbitmq
 
 volumes:
-  auth_cluster:
-    name: auth_cluster
+  auth-db:
+    name: auth-db
+  social-db:
+    name: social-db
   rabbitmq:
     name: rabbitmq
+  minio: 
+    name: minio
+
+networks:
+  backend:
+    name: backend
