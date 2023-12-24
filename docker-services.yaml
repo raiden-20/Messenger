@@ -1,46 +1,15 @@
 version: "3.9"
 services:
-  minio:
-    container_name: minio
-    image: minio/minio
-    ports:
-      - ${MINIO_GUI_PORT}:9001
-      - ${MINIO_PORT}:9000
-    volumes:
-      - minio:/data
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    networks:
-      - backend
-    command: server --console-address ":9001" /data
-
-  rabbitmq:
-    container_name: rabbitmq
-    image: rabbitmq:3.11.25-management
-    volumes:
-      - rabbitmq:/var/lib/rabbitmq
-    hostname: rabbitmq
-    restart: on-failure
-    ports:
-      - ${RABBITMQ_ADMIN_PORT}:15672
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
-    networks:
-      - backend
-    healthcheck:
-      test: "CMD rabbitmqctl status"
-
   auth-service:
     container_name: auth-service
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    ports:
-      - ${AUTH_SERVICE_PORT}:8080
+    # ports:
+    #   - ${AUTH_SERVICE_PORT}:8080
     environment:
       - JWT_SECRET=${JWT_SECRET}
+      - KONG_KEY=${KONG_KEY}
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
@@ -88,7 +57,6 @@ services:
     networks:
       - backend
     depends_on:
-      - rabbitmq
       - auth-service
 
   social-service:
@@ -96,8 +64,8 @@ services:
     build:
       context: ./social-service
       dockerfile: Dockerfile
-    ports:
-      - ${SOCIAL_SERVICE_PORT}:8080
+    # ports:
+    #   - ${SOCIAL_SERVICE_PORT}:8080
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - RABBITMQ_USER=${RABBITMQ_USER}
@@ -111,7 +79,6 @@ services:
       - backend
     depends_on:
       - social-db
-      - rabbitmq
 
   social-db:
     container_name: social-db
@@ -131,6 +98,24 @@ services:
     healthcheck:
       test: "CMD-SHELL pg_isready -U ${SOCIAL_POSTGRES_USER} -d ${SOCIAL_POSTGRES_DB}"
 
+  # blog-db:
+  #   container_name: blog-db
+  #   image: postgres:14
+  #   volumes:
+  #     - blog-db:/var/lib/postgresql/data
+  #     - ./init_db/blog_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+  #   ports:
+  #     - ${BLOG_DB_PORT}:5432
+  #   environment:
+  #       - POSTGRES_USER=${BLOG_POSTGRES_USER}
+  #       - POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
+  #       - POSTGRES_DB=${BLOG_POSTGRES_DB}
+  #   restart: on-failure
+  #   networks:
+  #     - backend
+  #   healthcheck:
+  #     test: "CMD-SHELL pg_isready -U ${BLOG_POSTGRES_USER} -d ${BLOG_POSTGRES_DB}"
+
   file-service:
     container_name: file-service
     build:
@@ -147,20 +132,17 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_HOST=${MINIO_HOST}
+      - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
     networks:
       - backend
-    depends_on:
-      - rabbitmq
-
+      
 volumes:
   auth-db:
     name: auth-db
   social-db:
     name: social-db
-  rabbitmq:
-    name: rabbitmq
-  minio: 
-    name: minio
+  # blog-db:
+  #   name: blog-db
 
 networks:
   backend:

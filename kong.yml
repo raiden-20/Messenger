@@ -1,0 +1,116 @@
+_format_version: "3.0"
+_transform: true
+
+services:
+- name: auth-service
+  url: http://auth-service:8080
+- name: social-service
+  url: http://social-service:8080
+- name: file-service
+  url: http://file-service:8080
+
+routes:
+  - name: auth-open-access
+    paths: 
+      - /auth/registration
+      - /auth/login
+      - /auth/active/account
+      - /auth/data/{id}
+      - /auth/active/account
+      - /auth/forget/password
+    service: auth-service
+    strip_path: false
+    methods:
+      - POST
+      - GET
+      - PUT
+      - OPTIONS
+  - name: auth-closed-access
+    paths:
+      - /auth/block
+      - /auth/change/nickname
+      - /auth/change/email
+      - /auth/confirm/email
+      - /auth/change/password
+      - /auth/confirm/password
+    service: auth-service
+    strip_path: false
+    methods:
+      - POST
+      - PUT
+      - OPTIONS
+  - name: social-open-access
+    paths: 
+      - /social/registration
+    service: social-service
+    strip_path: false
+    methods:
+      - POST
+      - OPTIONS      
+  - name: social-closed-access
+    paths: 
+      - /social/data/
+      - /social/data
+      - /social/users
+      - /social/friends/random/
+      - /social/relation
+      - /social/count
+      - /social/action
+    service: social-service
+    strip_path: false
+    methods:
+      - POST
+      - GET
+      - PUT
+      - OPTIONS
+  - name: file-closed-access
+    paths:
+    - /file
+    service: file-service
+    strip_path: false
+    methods:
+      - POST
+      - DELETE
+      - OPTIONS
+
+plugins:
+  - name: jwt
+    route: auth-closed-access
+    enabled: true
+    config:
+      key_claim_name: key
+plugins:
+  - name: jwt
+    route: social-closed-access
+    enabled: true
+    config:
+      key_claim_name: key
+plugins:
+  - name: jwt
+    route: file-closed-access
+    enabled: true
+    config:
+      key_claim_name: key   
+plugins:
+- name: cors
+  enabled: true
+  config:
+    origins: 
+    - http://localhost:3000
+    headers:
+    - Accept
+    - Accept-Version
+    - Content-Length
+    - Content-MD5
+    - Content-Type
+    - Date
+    - X-Auth-Token
+    - Authorization
+    max_age: 3600
+    credentials: true
+
+consumers:
+  - username: raiden
+jwt_secrets:
+  - consumer: raiden
+    secret: 29qmvb8qbzj7sjhrrtmi5xp3oz98kzk529qmvb8qbzj7sj
