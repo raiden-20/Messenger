@@ -8,6 +8,8 @@ services:
   url: http://social-service:8080
 - name: file-service
   url: http://file-service:8080
+- name: blog-service
+  url: http://blog-service:8080
 
 routes:
   - name: auth-open-access
@@ -15,7 +17,7 @@ routes:
       - /auth/registration
       - /auth/login
       - /auth/active/account
-      - /auth/data/{id}
+      - /auth/data/
       - /auth/active/account
       - /auth/forget/password
     service: auth-service
@@ -72,6 +74,27 @@ routes:
       - POST
       - DELETE
       - OPTIONS
+  - name: blog-closed-access
+    paths: 
+      - /blog/user/
+      - /blog/post/create
+      - /blog/post/
+      - /blog/post
+      - /blog/post/like
+      - /blog/comment/create
+      - /blog/comment
+      - /blog/comment/
+      - /blog/comment/like
+      - /blog/photo/
+      - /blog/photo/count/
+    service: blog-service
+    strip_path: false
+    methods:
+      - POST
+      - GET
+      - PUT
+      - DELETE
+      - OPTIONS    
 
 plugins:
   - name: jwt
@@ -91,6 +114,13 @@ plugins:
     enabled: true
     config:
       key_claim_name: key   
+plugins:
+  - name: jwt
+    route: blog-closed-access
+    enabled: true
+    config:
+      key_claim_name: key   
+
 plugins:
 - name: cors
   enabled: true
