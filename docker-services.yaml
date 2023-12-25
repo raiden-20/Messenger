@@ -5,8 +5,6 @@ services:
     build:
       context: ./auth-service
       dockerfile: Dockerfile
-    # ports:
-    #   - ${AUTH_SERVICE_PORT}:8080
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - KONG_KEY=${KONG_KEY}
@@ -64,8 +62,6 @@ services:
     build:
       context: ./social-service
       dockerfile: Dockerfile
-    # ports:
-    #   - ${SOCIAL_SERVICE_PORT}:8080
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - RABBITMQ_USER=${RABBITMQ_USER}
@@ -98,31 +94,48 @@ services:
     healthcheck:
       test: "CMD-SHELL pg_isready -U ${SOCIAL_POSTGRES_USER} -d ${SOCIAL_POSTGRES_DB}"
 
-  # blog-db:
-  #   container_name: blog-db
-  #   image: postgres:14
-  #   volumes:
-  #     - blog-db:/var/lib/postgresql/data
-  #     - ./init_db/blog_init_db.sql:/docker-entrypoint-initdb.d/init.sql
-  #   ports:
-  #     - ${BLOG_DB_PORT}:5432
-  #   environment:
-  #       - POSTGRES_USER=${BLOG_POSTGRES_USER}
-  #       - POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
-  #       - POSTGRES_DB=${BLOG_POSTGRES_DB}
-  #   restart: on-failure
-  #   networks:
-  #     - backend
-  #   healthcheck:
-  #     test: "CMD-SHELL pg_isready -U ${BLOG_POSTGRES_USER} -d ${BLOG_POSTGRES_DB}"
+  blog-service:
+    container_name: blog-service
+    build:
+      context: ./blog-service
+      dockerfile: Dockerfile
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASS=${RABBITMQ_PASS}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - BLOG_POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
+      - BLOG_POSTGRES_USER=${BLOG_POSTGRES_USER}
+      - BLOG_POSTGRES_URL=${BLOG_POSTGRES_URL}
+    networks:
+      - backend
+    depends_on:
+      - blog-db
+
+  blog-db:
+    container_name: blog-db
+    image: postgres:14
+    volumes:
+      - blog-db:/var/lib/postgresql/data
+      - ./init_db/blog_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - ${BLOG_DB_PORT}:5432
+    environment:
+        - POSTGRES_USER=${BLOG_POSTGRES_USER}
+        - POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
+        - POSTGRES_DB=${BLOG_POSTGRES_DB}
+    restart: on-failure
+    networks:
+      - backend
+    healthcheck:
+      test: "CMD-SHELL pg_isready -U ${BLOG_POSTGRES_USER} -d ${BLOG_POSTGRES_DB}"
 
   file-service:
     container_name: file-service
     build:
       context: ./file-service
       dockerfile: Dockerfile
-    ports:
-      - ${FILE_SERVICE_PORT}:8080
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - RABBITMQ_USER=${RABBITMQ_USER}
@@ -141,8 +154,8 @@ volumes:
     name: auth-db
   social-db:
     name: social-db
-  # blog-db:
-  #   name: blog-db
+  blog-db:
+    name: blog-db
 
 networks:
   backend:

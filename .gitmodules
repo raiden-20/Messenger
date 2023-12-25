@@ -16,3 +16,6 @@
 [submodule "file-service"]
 	path = file-service
 	url = https://github.com/raiden-20/Messenger-fileService.git
+[submodule "blog-service"]
+	path = blog-service
+	url = https://github.com/raiden-20/Messenger-blogService.git
