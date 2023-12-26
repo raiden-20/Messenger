@@ -54,9 +54,9 @@ routes:
       - /social/data/
       - /social/data
       - /social/users
-      - /social/friends/random/
-      - /social/relation
-      - /social/count
+      - /social/relation/friends/random/
+      - /social/relation/
+      - /social/count/
       - /social/action
     service: social-service
     strip_path: false
