@@ -12,8 +12,8 @@ services:
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - AUTH_POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
-      - AUTH_POSTGRES_USER=${AUTH_POSTGRES_USER}
+      - AUTH_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - AUTH_POSTGRES_USER=${POSTGRES_USER}
       - AUTH_POSTGRES_URL=${AUTH_POSTGRES_URL}
       - AUTH_LINK_ACTIVATION=${AUTH_LINK_ACTIVATION}
       - AUTH_LINK_EMAIL=${AUTH_LINK_EMAIL}
@@ -21,24 +21,6 @@ services:
       - backend
     depends_on:
       - auth-db
-
-  auth-db:
-    container_name: auth-db
-    image: postgres:14
-    volumes:
-      - auth-db:/var/lib/postgresql/data
-      - ./init_db/auth_init_db.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - ${AUTH_DB_PORT}:5432
-    environment:
-      - POSTGRES_USER=${AUTH_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${AUTH_POSTGRES_PASSWORD}
-      - POSTGRES_DB=${AUTH_POSTGRES_DB}
-    restart: on-failure
-    networks:
-      - backend
-    healthcheck:
-      test: "CMD-SHELL pg_isready -U ${AUTH_POSTGRES_USER} -d ${AUTH_POSTGRES_DB}"
 
   mail-sender:
     container_name: mail-sender
@@ -68,31 +50,13 @@ services:
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - SOCIAL_POSTGRES_PASSWORD=${SOCIAL_POSTGRES_PASSWORD}
-      - SOCIAL_POSTGRES_USER=${SOCIAL_POSTGRES_USER}
+      - SOCIAL_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SOCIAL_POSTGRES_USER=${POSTGRES_USER}
       - SOCIAL_POSTGRES_URL=${SOCIAL_POSTGRES_URL}
     networks:
       - backend
     depends_on:
       - social-db
-
-  social-db:
-    container_name: social-db
-    image: postgres:14
-    volumes:
-      - social-db:/var/lib/postgresql/data
-      - ./init_db/social_init_db.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - ${SOCIAL_DB_PORT}:5432
-    environment:
-      - POSTGRES_USER=${SOCIAL_POSTGRES_USER}
-      - POSTGRES_PASSWORD=${SOCIAL_POSTGRES_PASSWORD}
-      - POSTGRES_DB=${SOCIAL_POSTGRES_DB}
-    restart: on-failure
-    networks:
-      - backend
-    healthcheck:
-      test: "CMD-SHELL pg_isready -U ${SOCIAL_POSTGRES_USER} -d ${SOCIAL_POSTGRES_DB}"
 
   blog-service:
     container_name: blog-service
@@ -105,31 +69,14 @@ services:
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_HOST=${RABBITMQ_HOST}
       - RABBITMQ_PORT=${RABBITMQ_PORT}
-      - BLOG_POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
-      - BLOG_POSTGRES_USER=${BLOG_POSTGRES_USER}
+      - BLOG_POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - BLOG_POSTGRES_USER=${POSTGRES_USER}
       - BLOG_POSTGRES_URL=${BLOG_POSTGRES_URL}
     networks:
       - backend
     depends_on:
       - blog-db
 
-  blog-db:
-    container_name: blog-db
-    image: postgres:14
-    volumes:
-      - blog-db:/var/lib/postgresql/data
-      - ./init_db/blog_init_db.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - ${BLOG_DB_PORT}:5432
-    environment:
-        - POSTGRES_USER=${BLOG_POSTGRES_USER}
-        - POSTGRES_PASSWORD=${BLOG_POSTGRES_PASSWORD}
-        - POSTGRES_DB=${BLOG_POSTGRES_DB}
-    restart: on-failure
-    networks:
-      - backend
-    healthcheck:
-      test: "CMD-SHELL pg_isready -U ${BLOG_POSTGRES_USER} -d ${BLOG_POSTGRES_DB}"
 
   file-service:
     container_name: file-service
@@ -148,14 +95,24 @@ services:
       - MINIO_PUBLIC_HOST=${MINIO_PUBLIC_HOST}
     networks:
       - backend
-      
-volumes:
-  auth-db:
-    name: auth-db
-  social-db:
-    name: social-db
-  blog-db:
-    name: blog-db
+
+  # chat-db:
+  #   container_name: chat-db
+  #   image: mongo:7.0.5-rc0
+  #   volumes:
+  #     - ./init_db/chat_init_db.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+  #     - chat-db:/data/db
+  #   environment:
+  #     MONGO_INITDB_ROOT_USERNAME: admin
+  #     MONGO_INITDB_ROOT_PASSWORD: admin
+  #     MONGO_INITDB_DATABASE: admin
+  #   ports:
+  #     - ${CHAT_DB_PORT}:27017
+  #   restart: on-failure
+  #   networks:
+  #     - backend
+  #   # healthcheck:
+  #   #   test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
 
 networks:
   backend:

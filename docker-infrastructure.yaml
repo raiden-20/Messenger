@@ -77,11 +77,30 @@ services:
     healthcheck:
       test: "CMD rabbitmqctl status"
 
+  postgres:
+    container_name: postgres
+    image: postgres:14
+    volumes:
+      - messenger_postgres:/var/lib/postgresql/data
+      - ./init_db/postgres_init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - ${POSTGRES_DB_PORT}:5432
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    restart: on-failure
+    networks:
+      - backend
+    healthcheck:
+      test: "CMD-SHELL pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+
 volumes:
   rabbitmq:
     name: rabbitmq
   minio: 
     name: minio
+  messenger_postgres:
+    name: messenger_postgres
 
 networks:
   backend:
