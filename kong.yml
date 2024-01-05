@@ -67,7 +67,8 @@ routes:
       - OPTIONS
   - name: file-closed-access
     paths:
-    - /file
+    - /file/blog
+    - /file/social
     service: file-service
     strip_path: false
     methods:
