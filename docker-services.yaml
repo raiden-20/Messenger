@@ -19,8 +19,7 @@ services:
       - AUTH_LINK_EMAIL=${AUTH_LINK_EMAIL}
     networks:
       - backend
-    depends_on:
-      - auth-db
+
 
   mail-sender:
     container_name: mail-sender
@@ -55,8 +54,6 @@ services:
       - SOCIAL_POSTGRES_URL=${SOCIAL_POSTGRES_URL}
     networks:
       - backend
-    depends_on:
-      - social-db
 
   blog-service:
     container_name: blog-service
@@ -74,8 +71,6 @@ services:
       - BLOG_POSTGRES_URL=${BLOG_POSTGRES_URL}
     networks:
       - backend
-    depends_on:
-      - blog-db
 
 
   file-service:
