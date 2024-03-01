@@ -6,8 +6,44 @@
 - Frontend разработчик - [Анастасия](https://github.com/korobasssss)
 - Дизайнер - [Елизавета](https://github.com/linkouwu)
 
-## Стек технологий:
+## Разработка:
 ![схема](https://github.com/raiden-20/Messenger/assets/104516954/16cb5e2a-f0f2-4480-8d64-7864a4fc0d2a)
+### Инструкция по запуску:
+1. Клонируйте проект и перейдите в папку Messenger
+   ```
+   cd ./Messenger
+   ```
+2. Выполните команду для клонирования репозиториев - сабмодулей
+   ```
+   git submodule update --remote
+   ```
+3. Запустите процесс сборки контейнеров с инфраструктурой
+   ```
+   docker compose -p messenger-infrastraucture -f ./docker-infrastructure.yaml up
+   ```
+4. Выполните GET запрос и скопируйте значение у поля key
+   ```
+   curl localhost:8001/consumers/raiden/jwt
+   ```
+5. Откройте файл .env и поместите скопированное значение в поле KONG_KEY, сохраните файл
+6. В файле .env в поле MAIL_CLUSTER в поля user и pass поместите свои логин и пароль для приложений **от почтвого ящика Яндекс**, сохраните файл
+7. Запустите процесс сборки контейнеров с основными микросервисами
+   ```
+   docker compose -p messenger-services -f ./docker-services.yaml up
+   ```
+8. Перейдите в папку frontend
+   ```
+   cd ./frontend
+   ```
+9. Выполните команду для установки зависимостей клиенской части приложения
+   ```
+   npm install
+   ```
+10. Выполните команду для запуска клиентской части приложения
+    ```
+    npm start
+    ```
+12. Перейдите в браузере по адресу localhost:3000, приложение готово к работе
 ### Frontend:
 - HTML5, CSS3
 - Typescript
